@@ -9,3 +9,7 @@ __pycache__/
 .ipynb_checkpoints/
 .venv/
 venv/
+
+# Pipeline output written next to the working directory
+/processed_data/
+/raw_data_qualifying/
