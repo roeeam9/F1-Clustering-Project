@@ -4,14 +4,14 @@ import os
 def calculate_feature_statistics():
     print("--- Calculating Feature Statistics ---")
     
-    # נתיב לקובץ הפיצ'רים הסופי (קריאה בלבד!)
+    # Path to the final feature file (read only)
     input_file = 'processed_data/Qualifying_final_clustering_matrix.csv'
     
-    # תיקיית היעד והקובץ החדש שייווצר
+    # Output directory and the new file to be created
     output_dir = 'Driver Performance Metrics'
     output_file = os.path.join(output_dir, 'Feature_Statistics_Summary.csv')
     
-    # יצירת התיקייה החדשה אם היא לא קיימת
+    # Create the output directory if it does not exist
     os.makedirs(output_dir, exist_ok=True)
     
     try:
@@ -21,7 +21,7 @@ def calculate_feature_statistics():
         print(f"  [!] Error: Could not find '{input_file}'.")
         return
 
-    # רשימת העמודות הנומריות המעודכנת שלך (ללא עמודות מזהים)
+    # Numeric columns to profile (identifier columns excluded)
     features_to_analyze = [
         'entry_speed', 
         'apex_speed', 
@@ -37,7 +37,7 @@ def calculate_feature_statistics():
         'average_speed'
     ]
     
-    # וידוא שהעמודות קיימות בקובץ למניעת שגיאות
+    # Verify the columns exist in the file
     missing_cols = [col for col in features_to_analyze if col not in df.columns]
     if missing_cols:
          print(f"  [!] Warning: Missing columns {missing_cols}. They will be skipped.")
@@ -45,11 +45,11 @@ def calculate_feature_statistics():
 
     print("  -> Calculating Min, Max, Mean, Median, and Variance...")
     
-    # חישוב הסטטיסטיקות
+    # Compute the statistics
     stats_list = []
     
     for feature in features_to_analyze:
-        # שימוש ב-dropna כדי למנוע שגיאות חישוב במקרה נדיר של תא ריק
+        # dropna guards against calculation errors on the rare empty cell
         feature_data = df[feature].dropna() 
         
         stats_list.append({
@@ -61,16 +61,16 @@ def calculate_feature_statistics():
             'Variance': round(feature_data.var(), 4)
         })
         
-    # יצירת Dataframe מהתוצאות
+    # Build a DataFrame from the results
     stats_df = pd.DataFrame(stats_list)
     
-    # שמירה לקובץ החדש (לא דורס את קובץ המקור!)
+    # Write to the new file; the source file is left untouched
     stats_df.to_csv(output_file, index=False)
     
     print(f"\n--- Process Complete ---")
     print(f"  [SUCCESS] Statistical summary safely saved to: {output_file}")
     
-    # הדפסה קצרה למסך כדי שתראה את התוצאות מיד
+    # Short printout so the results are visible immediately
     print("\n  Preview of Statistics:")
     print(stats_df.to_string(index=False))
 

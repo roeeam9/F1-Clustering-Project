@@ -6,10 +6,10 @@ import os
 def create_outlier_visualizations():
     print("--- Generating Outlier Visualizations ---")
     
-    # נתיב לקובץ הפיצ'רים הסופי
+    # Path to the final feature file
     input_file = 'processed_data/Qualifying_final_clustering_matrix.csv'
     
-    # תיקיית היעד לתמונות שייווצרו
+    # Output directory for the generated images
     output_dir = 'outlier_visualizations'
     os.makedirs(output_dir, exist_ok=True)
     
@@ -20,7 +20,7 @@ def create_outlier_visualizations():
         print(f"  [!] Error: Could not find '{input_file}'.")
         return
 
-    # רשימת המאפיינים (בשמות החדשים) שנרצה לבדוק
+    # Features to inspect, using the updated column names
     features = [
         'entry_speed', 'apex_speed', 'exit_speed', 'speed_drop',
         'braking_pct_before_apex', 'trail_braking_pct', 
@@ -28,33 +28,33 @@ def create_outlier_visualizations():
         'braking_time_pct', 'average_throttle', 'min_gear', 'average_speed'
     ]
     
-    # וידוא שהעמודות באמת קיימות בקובץ
+    # Verify the columns exist in the file
     available_features = [f for f in features if f in df.columns]
     
     if not available_features:
         print("  [!] Error: Could not find the specified columns. Check column names.")
         return
 
-    # הגדרת סגנון ויזואלי נקי ומקצועי
+    # Clean visual style
     sns.set_theme(style="whitegrid")
     
     for feature in available_features:
-        # פתיחת חלון ציור חדש
+        # New figure
         plt.figure(figsize=(12, 6))
         
-        # 1. יצירת Boxplot (תרשים קופסה). נקודות שיוצאות מחוץ ל"שפמים" הן Outliers טהורים
+        # 1. Boxplot - points beyond the whiskers are the outliers
         sns.boxplot(x='track', y=feature, data=df, palette="Set2", width=0.5, fliersize=6)
         
-        # 2. הוספת פיזור הנקודות עצמן (Jitter) כדי להבין כמה נתונים יש בכל אזור
+        # 2. Overlay the individual points (jitter) to show where the data is dense
         sns.stripplot(x='track', y=feature, data=df, color=".25", alpha=0.3, size=3, jitter=True)
         
-        # עיצוב הכותרות
+        # Titles
         clean_title = feature.replace("_", " ").title()
         plt.title(f'Outlier Detection: {clean_title} by Track', fontsize=16, fontweight='bold')
         plt.xlabel('Track', fontsize=12)
         plt.ylabel(clean_title, fontsize=12)
         
-        # שמירת התמונה לתיקייה
+        # Save the image
         file_name = f"Outliers_{feature}.png"
         output_path = os.path.join(output_dir, file_name)
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
