@@ -19,17 +19,17 @@ def calculate_accurate_telemetry_statistics():
         return
 
     # ==========================================
-    # שלב התיקון: אחידות בשמות העמודות
+    # Normalise the column names
     # ==========================================
-    # הופכים את כל שמות העמודות לאותיות קטנות (RPM -> rpm, Speed -> speed)
+    # Lower-case every column name (RPM -> rpm, Speed -> speed)
     df.columns = df.columns.str.lower()
     
-    # תיקון מיוחד לעמודת ההילוך של FastF1 (מ-ngear ל-n_gear)
+    # Special case for the FastF1 gear column (ngear -> n_gear)
     if 'ngear' in df.columns:
         df.rename(columns={'ngear': 'n_gear'}, inplace=True)
 
     # ==========================================
-    # שלב הסינון (הגיון פיזיקלי של הקפה מהירה)
+    # Filtering stage - physical sanity checks for a fast lap
     # ==========================================
     print("  -> Filtering sensor glitches and invalid data points...")
     
@@ -50,7 +50,7 @@ def calculate_accurate_telemetry_statistics():
             df['brake'] = df['brake'].astype(int) * 100
         df['brake'] = df['brake'].clip(lower=0, upper=100)
 
-    # חישוב הסטטיסטיקות
+    # Compute the statistics
     features_to_analyze = ['rpm', 'speed', 'n_gear', 'throttle', 'brake', 'x', 'y', 'z']
     valid_features = [col for col in features_to_analyze if col in df.columns]
 

@@ -8,21 +8,21 @@ def plot_racing_lines_robust():
     df_corners = pd.read_csv("../archive/F1_4_Races_All_Corners.csv")
     df_corners['start_time'] = pd.to_datetime(df_corners['start_time'], format='ISO8601')
 
-    # אנחנו מתמקדים במרוץ אחד (למשל 9558 - סילברסטון) כדי לחסוך קריאות API
+    # Focus on a single race (e.g. 9558 - Silverstone) to save API calls
     target_session = 9558
     df_session = df_corners[df_corners['session_key'] == target_session]
 
-    # בוחרים 6 פניות שונות מהמרוץ הזה
-    # אנחנו מורידים כפילויות של זמנים כדי לא לקבל את אותה פנייה פעמיים
+    # Pick 6 different corners from that race
+    # Drop duplicate timestamps so the same corner is not taken twice
     df_sample = df_session.drop_duplicates(subset=['start_time']).iloc[[10, 20, 30, 40, 50, 60]]
 
-    # נבחר 3 נהגים בולטים כדי לא להעמיס על הגרף (המילטון, ורסטאפן, לקלר)
+    # Pick 3 notable drivers to keep the plot readable (Hamilton, Verstappen, Leclerc)
     drivers = [44, 1, 16] 
     colors = ['#00D2BE', '#FF8700', '#DC0000']
     names = ['Hamilton (44)', 'Verstappen (1)', 'Leclerc (16)']
 
     # ==========================================
-    # שאיבת הנתונים החכמה: מורידים פעם אחת למרוץ השלם
+    # Fetch the data once for the whole race instead of once per corner
     # ==========================================
     print("Fetching location data (This will take a few seconds but ensures no crashes)...")
     loc_data_cache = {}
@@ -35,7 +35,7 @@ def plot_racing_lines_robust():
             loc_data_cache[drv] = df_loc
 
     # ==========================================
-    # ציור הגרפים
+    # Plotting
     # ==========================================
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
     axes = axes.flatten()
@@ -44,20 +44,20 @@ def plot_racing_lines_robust():
         ax = axes[i]
         start_t = corner['start_time']
         
-        # חלון הזמן: שנייה לפני הפנייה ו-4 שניות אחריה
+        # Time window: one second before the corner and four seconds after
         t_start = start_t - pd.Timedelta(seconds=1)
         t_end = start_t + pd.Timedelta(seconds=4)
 
-        # ציור ה"אספלט" האפור מתוך הנתונים של הנהג הראשון
+        # Draw the grey "asphalt" from the first driver's data
         base_drv = drivers[0]
         if base_drv in loc_data_cache:
             df_base = loc_data_cache[base_drv]
             df_base_zoom = df_base[(df_base['date'] >= t_start) & (df_base['date'] <= t_end)]
             if not df_base_zoom.empty:
-                # הקו העבה שמדמה מסלול
+                # Thick line standing in for the track surface
                 ax.plot(df_base_zoom['x'], df_base_zoom['y'], color='#E8E8E8', linewidth=30, solid_capstyle='round', zorder=1)
 
-        # ציור המסלולים של כל נהג (Racing Lines) - בדיוק כמו שציירת באדום וירוק
+        # Draw each driver's racing line
         for drv, color, name in zip(drivers, colors, names):
             if drv in loc_data_cache:
                 df_drv = loc_data_cache[drv]
@@ -68,8 +68,8 @@ def plot_racing_lines_robust():
                             label=name if i == 0 else "", zorder=2)
 
         ax.set_title(f"Corner {i+1} | Apex Speed: {int(corner['apex_speed'])} km/h", fontsize=14)
-        ax.axis('equal') # קריטי כדי שהמסלול לא יתעוות
-        ax.set_xticks([]) # מוריד את המספרים בצירים לניקיון ויזואלי
+        ax.axis('equal') # keeps the track from being distorted
+        ax.set_xticks([]) # hide the axis numbers for a cleaner look
         ax.set_yticks([])
 
     fig.legend(loc='upper center', bbox_to_anchor=(0.5, 0.98), ncol=3, fontsize=14)

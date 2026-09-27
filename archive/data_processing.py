@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 def generate_pure_fastest_laps():
-    print("מתחיל בעיבוד הנתונים ליצירת קובץ הזהב (כולל זמן הקפה)...")
+    print("Processing the data to build the golden-laps file (including lap time)...")
     
     raw_data_dir = 'raw_data'
     processed_data_dir = 'processed_data'
@@ -14,40 +14,40 @@ def generate_pure_fastest_laps():
     all_pure_data = []
     
     for track in tracks:
-        print(f"מעבד את מסלול: {track}...")
+        print(f"Processing track: {track}...")
         
-        # טעינת הקבצים
+        # Load the files
         laps_df = pd.read_csv(os.path.join(raw_data_dir, f'{track}_raw_laps.csv'))
         loc_df = pd.read_csv(os.path.join(raw_data_dir, f'{track}_raw_location.csv'))
         tel_df = pd.read_csv(os.path.join(raw_data_dir, f'{track}_raw_telemetry.csv'))
         
-        # המרת זמנים מותאמת (ISO8601) למניעת קריסות מילישניות
+        # Tolerant ISO8601 parsing, to avoid crashes on millisecond formats
         laps_df['date_start'] = pd.to_datetime(laps_df['date_start'], format='ISO8601')
         loc_df['date'] = pd.to_datetime(loc_df['date'], format='ISO8601')
         tel_df['date'] = pd.to_datetime(tel_df['date'], format='ISO8601')
         
-        # 1. ניקוי הקפות Pit-Out
+        # 1. Drop pit-out laps
         valid_laps = laps_df[~laps_df['is_pit_out_lap'].isin([True, 'True', 'true', 1])].copy()
         
-        # 2. זיהוי וניקוי הקפות Pit-In 
+        # 2. Detect and drop pit-in laps 
         laps_df['next_lap_is_pit_out'] = laps_df.groupby('driver_number')['is_pit_out_lap'].shift(-1)
         pit_in_mask = laps_df['next_lap_is_pit_out'].isin([True, 'True', 'true', 1]) | laps_df['lap_duration'].isna()
         
-        # שילוב הסינונים
+        # Combine the filters
         valid_laps = valid_laps[~valid_laps.index.isin(laps_df[pit_in_mask].index)]
         
-        # 3. בחירת ההקפה המהירה ביותר (Pure Lap) לכל נהג
+        # 3. Pick the fastest clean lap (pure lap) for each driver
         fastest_laps_indices = valid_laps.groupby('driver_number')['lap_duration'].idxmin()
         fastest_laps = valid_laps.loc[fastest_laps_indices]
         
-        # מיזוג נתוני הטלמטריה וה-GPS עבור ההקפות הטהורות שנבחרו
+        # Merge the telemetry and GPS data for the selected pure laps
         for _, lap in fastest_laps.iterrows():
             driver = lap['driver_number']
             
             start_time = lap['date_start']
             end_time = start_time + pd.to_timedelta(lap['lap_duration'], unit='s')
             
-            # סינון הדאטה לחלון הזמן הרלוונטי וסידור לפי זמן
+            # Filter to the relevant time window and sort by time
             driver_loc = loc_df[(loc_df['driver_number'] == driver) & 
                                 (loc_df['date'] >= start_time) & 
                                 (loc_df['date'] <= end_time)].sort_values('date')
@@ -59,30 +59,30 @@ def generate_pure_fastest_laps():
             if driver_loc.empty or driver_tel.empty:
                 continue
                 
-            # מיזוג לפי הזמן הקרוב ביותר
+            # Merge on the nearest timestamp
             merged_lap = pd.merge_asof(driver_tel, driver_loc[['date', 'x', 'y']], 
                                        on='date', direction='nearest')
             
             merged_lap['Track'] = track
             
-            # -- השינוי מתבצע כאן --
-            # הוספת זמן ההקפה (בשורות) לפני השמירה
+            # -- change starts here --
+            # Attach the lap time to every row before saving
             merged_lap['lap_duration'] = lap['lap_duration']
             
-            # שמירת העמודות הרלוונטיות (הוספנו את lap_duration לרשימה)
+            # Keep the relevant columns (lap_duration added to the list)
             final_columns = ['Track', 'driver_number', 'lap_duration', 'x', 'y', 'speed', 'brake', 'throttle', 'n_gear']
             merged_lap = merged_lap[final_columns]
             
             all_pure_data.append(merged_lap)
             
-    # שמירת הקובץ הסופי
+    # Save the final file
     if all_pure_data:
         final_df = pd.concat(all_pure_data, ignore_index=True)
         final_df.to_csv(output_file, index=False)
-        print(f"העיבוד הסתיים בהצלחה! הקובץ נשמר בנתיב: {output_file}")
+        print(f"Processing finished. File saved to: {output_file}")
         return final_df
     else:
-        print("לא נמצאו נתונים תקינים למיזוג.")
+        print("No valid data found to merge.")
         return None
 
 
