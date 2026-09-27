@@ -26,7 +26,7 @@ def plot_corner_validation_map(track_name, file_path='data/processed_data/New_Qu
     single_lap['x'] = pd.to_numeric(single_lap['x'], errors='coerce')
     single_lap['y'] = pd.to_numeric(single_lap['y'], errors='coerce')
     
-    # פונקציה חכמה שמוודאת קריאה נכונה של בוליאנים, למקרה שיש טקסט בקובץ
+    # Parses booleans correctly in case the file stores them as text
     def safe_bool(val):
         if isinstance(val, bool): return val
         if isinstance(val, str): return val.strip().lower() in ['true', '1', 't']
@@ -36,14 +36,14 @@ def plot_corner_validation_map(track_name, file_path='data/processed_data/New_Qu
     single_lap = single_lap.dropna(subset=['x', 'y'])
 
     # ========================================================
-    # התיקון הקריטי: ניקוי הנתונים עצמם בקצוות ההקפה
-    # מאחר וקו הסיום הוא תמיד יישורת, נאפס את נקודות הטלמטריה 
-    # של תחילת וסוף ההקפה ל-False
+    # Clean the data at the lap boundaries
+    # The start/finish line is always on a straight, so the telemetry points 
+    # at the start and end of the lap are forced to False
     # ========================================================
     if track_name=='Monza':
-        if len(single_lap) > 100:  # מוודאים שיש מספיק נתונים
+        if len(single_lap) > 100:  # make sure there is enough data
             corner_col_idx = single_lap.columns.get_loc('is_corner')
-        # 40 שורות זה בערך 3-4 שניות של נסיעה במהירות גבוהה
+        # 40 rows is roughly 3-4 seconds of driving at high speed
             single_lap.iloc[:30, corner_col_idx] = False
             single_lap.iloc[-5:, corner_col_idx] = False
     # ========================================================
