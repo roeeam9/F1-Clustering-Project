@@ -6,7 +6,7 @@ import os
 def generate_all_eda_visualizations():
     print("--- Starting Full EDA Visualization Suite ---")
     
-    # 1. הגדרת נתיבים
+    # 1. Paths
     input_file = 'processed_data/Qualifying_final_clustering_matrix.csv'
     output_dir = 'Pre_Clustering_Visualizations'
     os.makedirs(output_dir, exist_ok=True)
@@ -18,7 +18,7 @@ def generate_all_eda_visualizations():
         print(f"  [!] Error: Could not find '{input_file}'.")
         return
 
-    # 2. הגדרת המאפיינים (לפי השמות המעודכנים שלך)
+    # 2. Features, using the updated column names
     numeric_features = [
         'entry_speed', 'apex_speed', 'exit_speed', 'speed_drop',
         'braking_pct_before_apex', 'trail_braking_pct', 
@@ -26,14 +26,14 @@ def generate_all_eda_visualizations():
         'braking_time_pct', 'average_throttle', 'min_gear', 'average_speed'
     ]
     
-    # וידוא שהעמודות באמת קיימות בקובץ
+    # Verify the columns exist in the file
     features = [f for f in numeric_features if f in df.columns]
     
-    # הגדרת סגנון עיצוב כללי לכל הגרפים
+    # Shared style for all the plots
     sns.set_theme(style="whitegrid")
 
     # ==========================================
-    # Plot 1: Correlation Heatmap (מפת קורלציות)
+    # Plot 1: Correlation Heatmap
     # ==========================================
     print("  -> [1/6] Generating Correlation Heatmap...")
     plt.figure(figsize=(14, 12))
@@ -44,7 +44,7 @@ def generate_all_eda_visualizations():
     plt.close()
 
     # ==========================================
-    # Plot 2: Feature Distributions (התפלגות מאפיינים)
+    # Plot 2: Feature Distributions
     # ==========================================
     print("  -> [2/6] Generating Feature Distributions...")
     fig, axes = plt.subplots(nrows=3, ncols=4, figsize=(20, 12))
@@ -63,7 +63,7 @@ def generate_all_eda_visualizations():
     plt.close()
 
     # ==========================================
-    # Plot 3: Key Metrics Pairplot (מטריצת פיזור)
+    # Plot 3: Key Metrics Pairplot
     # ==========================================
     print("  -> [3/6] Generating Pairplot for Key Metrics...")
     key_metrics = ['apex_speed', 'speed_drop', 'braking_pct_before_apex', 'throttle_app_pct_after_apex']
@@ -77,7 +77,7 @@ def generate_all_eda_visualizations():
         plt.close()
 
     # ==========================================
-    # Plot 4: Track Bias Violin Plots (הטיית מסלול)
+    # Plot 4: Track Bias Violin Plots
     # ==========================================
     print("  -> [4/6] Generating Track Bias Violin Plots...")
     bias_features = ['apex_speed', 'braking_pct_before_apex', 'throttle_app_pct_after_apex', 'average_throttle']
@@ -98,7 +98,7 @@ def generate_all_eda_visualizations():
         plt.close()
 
     # ==========================================
-    # Plot 5: Categorical Bar Plot (ספירת פניות למסלול)
+    # Plot 5: Categorical Bar Plot - corner count per track
     # ==========================================
     print("  -> [5/6] Generating Categorical Bar Plot (Counts)...")
     if 'track' in df.columns:
@@ -117,7 +117,7 @@ def generate_all_eda_visualizations():
         plt.close()
 
     # ==========================================
-    # Plot 6: Category Differences (השוואת מהירויות לפי מסלול)
+    # Plot 6: Category Differences - speed comparison per track
     # ==========================================
     print("  -> [6/6] Generating Category Differences Bar Plot...")
     if all(c in df.columns for c in ['track', 'entry_speed', 'apex_speed']):
